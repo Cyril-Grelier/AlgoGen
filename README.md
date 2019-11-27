@@ -1,2 +1,3 @@
 # AlgoGen
-Genetic Algorithm
+
+## Requirements
