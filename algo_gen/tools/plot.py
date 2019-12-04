@@ -3,7 +3,6 @@ import textwrap
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from scipy.signal import savgol_filter
 
 sns.set()
 
@@ -25,7 +24,7 @@ def show_stats(stats):
     fig, ax = plt.subplots(figsize=(10, 10))
 
     plt.xlim(0, len(stats['max_fitness']))
-    plt.ylim(0, stats['max_fitness'][-1]*1.1)  # stats['parameters']['chromosome size'])
+    plt.ylim(0, stats['parameters']['chromosome size'])  # stats['max_fitness'][-1]*1.1
 
     ax.plot(stats['max_fitness'], color='red', label='max_fitness')
     ax.plot(stats['min_fitness'], color='green', label='min_fitness')
