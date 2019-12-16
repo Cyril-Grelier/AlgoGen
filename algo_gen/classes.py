@@ -178,7 +178,7 @@ class Population:
     def adaptative(self, method):
         switch = {
             'fixed roulette wheel': self.adaptative_fixe,
-            'adaptive roulette wheel': self.adaptative_wheel,
+            'adaptive roulette wheel': self.adaptive_roulette_wheel,
             'adaptive pursuit': self.adaptative_poursuit,
             'UCB': self.adaptative_ucb,
         }
@@ -189,8 +189,8 @@ class Population:
         selected_method = random.choices(range(len(methode)), proba, k=1)[0]
         self.method_switch[method][self.parameters[method][2][selected_method][1]]()
 
-    def adaptative_wheel(self, method):
-        pmin = 0.1
+    def adaptive_roulette_wheel(self, method):
+        pmin = self.parameters[method][3]
         switch = {
             'selection': 0,
             'crossover': 1,
@@ -198,6 +198,8 @@ class Population:
         }
         rank = switch[method]
         utility = list(map(list, zip(*self.stats['utility'][:-1])))
+        # if len(utility) > 50:
+        utility = utility[-5:]
         # [[[0, 'select_tournament']], [[0, 'monopoint']]]
         # self.parameters[method][2] == [[0.25, '1-flip'],[0.25, '3-flip'],[0.25, '5-flip'],[0.25, 'bitflip'],]
         n = len(self.parameters[method][2])
@@ -205,26 +207,45 @@ class Population:
             sum_uk = sum([u for u, _ in utility[rank]])
             for i in range(len(self.parameters[method][2])):
                 m = self.parameters[method][2][i][1]
-                print([u for u, me in utility[rank] if m == me])
+                # print([u for u, me in utility[rank] if m == me])
                 u_n = sum([u for u, me in utility[rank] if m == me])
-                print(f'{m} : {pmin + (1 - n * pmin) * (u_n / sum_uk if sum_uk != 0 else 0)}')
+                # print(f'{m} : {pmin + (1 - n * pmin) * (u_n / sum_uk if sum_uk != 0 else 0)}')
                 self.parameters[method][2][i][0] = pmin + (1 - n * pmin) * (u_n / sum_uk if sum_uk != 0 else 0)
         self.adaptative_fixe(method)
 
     def adaptative_poursuit(self, method):
-        pass
-        # pmin = 0.1
-        # n = len(self.parameters['selection'][2])
-        # pmax = 1 - (n - 1) * pmin
-        # u_selection = list(map(list, zip(*self.stats['utility'])))
-        # pbest = max(u_selection)
-        # if u_selection:
-        #     sum_uk = sum([u for u, _ in u_selection[0]])
-        #     for i in range(len(self.parameters['selection'][2])):
-        #         m = self.parameters['selection'][2][i][1][0]
-        #         u_n = sum([u for u, me in u_selection[0] if m in me])
-        #         self.parameters['selection'][2][i][0] = pmin + (1 - n * pmin) * (u_n / sum_uk if sum_uk != 0 else 1)
-        # self.select_adaptative_fixe()
+        switch = {
+            'selection': 0,
+            'crossover': 1,
+            'mutation': 2,
+        }
+        rank = switch[method]
+        utility = list(map(list, zip(*self.stats['utility'][:-1])))
+        # if len(utility) > 50:
+        #     utility = utility[-100:]
+        #     if len(utility) % 50 == 0:
+        #         for i in range(len(self.parameters[method][2])):
+        #             self.parameters[method][2][i][0] = 1 / len(self.parameters[method][2])
+        if len(utility) >= rank:
+            pmin = self.parameters[method][3]
+            pmax = 1 - (len(self.parameters[method][2]) - 1) * pmin
+            beta = self.parameters[method][4]
+            past_selected = utility[rank]
+            utilities = []
+            for i in range(len(self.parameters[method][2])):
+                methode = self.parameters[method][2][i][1]
+                nb_i = [m[1] for m in past_selected].count(methode)
+                utilities.append(sum([u for u, me in past_selected if methode in me]))
+            maxi = max(self.parameters[method][2], key=lambda e: e[0])[0]
+            indices = [i for i, v in enumerate(self.parameters[method][2]) if v[0] == maxi]
+            best = random.choice(indices)
+            for i in range(len(self.parameters[method][2])):
+                tminus1 = self.parameters[method][2][i][0]
+                if i == best:
+                    self.parameters[method][2][i][0] = tminus1 + beta * (pmax - tminus1)
+                else:
+                    self.parameters[method][2][i][0] = tminus1 + beta * (pmin - tminus1)
+        self.adaptative_fixe(method)
 
     def adaptative_ucb(self, method):
         switch = {
@@ -241,27 +262,11 @@ class Population:
             for i in range(len(self.parameters[method][2])):
                 methode = self.parameters[method][2][i][1]
                 nb_i = [m[1] for m in past_selected].count(methode)
-                print(f'nb_i {methode} : {nb_i}')
+                # print(f'nb_i {methode} : {nb_i}')
                 exploitations.append(sum([u for u, me in past_selected if methode in me]))
-                explorations.append(math.sqrt(2 * math.log(len(past_selected)) / (nb_i + 1)))  # if nb_i != 0 else 1)))
-            # min_exploi = min(exploitations)
-            # max_exploi = max(exploitations)
-            # min_explor = min(explorations)
-            # max_explor = max(explorations)
-            # normalize_exploitations = [
-            #     ((x - min_exploi) / ((max_exploi - min_exploi) if (max_exploi - min_exploi) != 0 else 1)) for x in
-            #     exploitations]
-            # normalize_explorations = [
-            #     ((x - min_explor) / ((max_explor - min_explor) if (max_explor - min_explor) != 0 else 1)) for x in
-            #     explorations]
-            print('!' * 80)
-            print(f'exploitations {exploitations}')
-            # print(f'normalize_exploitations {normalize_exploitations}')
-            print(f'explorations {explorations}')
-            # print(f'normalize_explorations {normalize_explorations}')
+                explorations.append(math.sqrt(2 * math.log(len(past_selected)) / (nb_i + 1)))
             for i in range(len(self.parameters[method][2])):
                 self.parameters[method][2][i][0] = exploitations[i] + explorations[i]
-            print(f'self.parameters[method][2] {self.parameters[method][2]}')
         maxi = max(self.parameters[method][2], key=lambda e: e[0])[0]
         indices = [i for i, v in enumerate(self.parameters[method][2]) if v[0] == maxi]
         choosen = random.choice(indices)
@@ -503,10 +508,10 @@ if __name__ == '__main__':
         'chromosome size': 100,  # 5 10 50 100
 
         'nb turn max': 1000,
-        'stop after no change': 50,  # int(config['nb turn max']*0.10),
+        'stop after no change': 5000000,  # int(config['nb turn max']*0.10),
 
         'selection':
-            ['select_tournament'],
+            ['select_best'],
         #     ['adaptative',
         #      'UCB',
         #      [
@@ -515,16 +520,17 @@ if __name__ == '__main__':
         #          [0.25, 'select_tournament'],
         #          [0.25, 'select_wheel']
         #      ]],
-        'proportion selection': 0.04,  # 2 / population_size
+        'proportion selection': 1,  # 0.04,  # 2 / population_size
 
         'crossover':
-        ['mono-point'],
+            ['mono-point'],
         #     ['adaptative',
         #      'UCB',
         #      [
         #          [0.25, 'mono-point'],
         #          [0.25, 'uniforme'],
-        #      ]],
+        #      ],
+        #      0.5],
         'proportion crossover': 0,
 
         'mutation':
@@ -537,7 +543,10 @@ if __name__ == '__main__':
                  [0.25, '3-flip'],
                  [0.25, '5-flip'],
                  [0.25, 'bit-flip']
-             ], ],
+             ],
+             0.05,  # pmin for adaptive roulette wheel and adaptive poursuite
+             0.5,  # beta for adaptive poursuit
+             ],
         'proportion mutation': 1,  # 0.1 0.2 0.5 0.8
 
         'insertion': 'fitness',  # 'age' 'fitness'
@@ -546,6 +555,27 @@ if __name__ == '__main__':
 
     population = Population(param)
     population.start()
+
+    utility = list(map(list, zip(*population.stats['utility'])))
+    val = list(map(list, zip(*utility[2])))[1]
+
+    count = {'1-flip': [0],
+             '3-flip': [0],
+             '5-flip': [0],
+             'bit-flip': [0],
+             }
+    for v in val:
+        for m in ['1-flip', '3-flip', '5-flip', 'bit-flip']:
+            count[m].append(count[m][-1] + (1 if v == m else 0))
+
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    for m in count.keys():
+        ax.plot(list(range(len(count[m]))), count[m], label=m)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    plt.show()
 
     from algo_gen.tools.plot import show_stats
 
