@@ -19,8 +19,8 @@ class GeneOneMax(Gene):
 
 class IndividualOneMax(Individual):
 
-    def __init__(self, parameters):
-        super().__init__(parameters)
+    def __init__(self, parameters, empty=False):
+        super().__init__(parameters, empty=empty)
         for _ in range(parameters['chromosome size']):
             self.sequence.append(GeneOneMax())
 

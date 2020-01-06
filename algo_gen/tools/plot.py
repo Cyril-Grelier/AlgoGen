@@ -23,13 +23,13 @@ def annot_max(x, y, ax=None):
 def show_stats(stats):
     fig, ax = plt.subplots(figsize=(10, 10))
 
-    plt.xlim(0, len(stats['max_fitness']))
-    plt.ylim(0, stats['parameters']['chromosome size'])  # stats['max_fitness'][-1]*1.1
+    # plt.xlim(0, len(stats['max_fitness']))
+    # plt.ylim(0, 100)  # stats['parameters']['chromosome size'])  # stats['max_fitness'][-1]*1.1
 
     ax.plot(stats['max_fitness'], color='red', label='max_fitness')
     ax.plot(stats['min_fitness'], color='green', label='min_fitness')
     ax.plot(stats['mean_fitness'], color='blue', label='mean_fitness')
-    ax.plot(stats['fitness_diversity'], color='black', label='fitness_diversity')
+    # ax.plot(stats['fitness_diversity'], color='black', label='fitness_diversity')
 
     windows_size = 49
     polynomial_order = 3
@@ -43,23 +43,23 @@ def show_stats(stats):
 
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
 
-    plt.title("\n".join(textwrap.wrap(str(stats['parameters']), 120)))
+    # plt.title("\n".join(textwrap.wrap(str(stats['parameters']['mutation'][1]), 120)))
     plt.show()
 
-    fig, ax = plt.subplots(figsize=(10, 10))
-
-    ax.plot(stats['diversity'], color='yellow', label='diversity')
-    ax.plot(stats['max_age'], color='c', label='max_age')
-    ax.plot(stats['mean_age'], color='m', label='mean_age')
-
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-
-    plt.show()
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-
-    ax.plot(stats['total_fitness'], color='black', label='total_fitness')
-
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-
-    plt.show()
+    # fig, ax = plt.subplots(figsize=(10, 10))
+    #
+    # ax.plot(stats['diversity'], color='yellow', label='diversity')
+    # ax.plot(stats['max_age'], color='c', label='max_age')
+    # ax.plot(stats['mean_age'], color='m', label='mean_age')
+    #
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    #
+    # plt.show()
+    #
+    # fig, ax = plt.subplots(figsize=(10, 10))
+    #
+    # ax.plot(stats['total_fitness'], color='black', label='total_fitness')
+    #
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    #
+    # plt.show()
