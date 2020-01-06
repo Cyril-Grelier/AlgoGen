@@ -4,8 +4,6 @@ import statistics
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
-from algo_gen.tools.tools import get_import
-
 
 ###############################################################
 #                           Gene                              #
@@ -91,7 +89,8 @@ class Population:
         self.crossed = []
         self.mutated = []
         self.nb_turns = 0
-        self.individual_class = get_import(parameters, 'individual')
+
+        self.individual_class = parameters['individual']
 
         individuals = []
         for _ in range(self.parameters['population size']):
@@ -702,9 +701,10 @@ class Population:
 
 def main():
     number_of_team = 6
+    from algo_gen.individuals.STS import IndividualSTS
     parameters = {
         'configuration name': 'config1',
-        'individual': ['algo_gen.individuals.STS', 'IndividualSTS'],
+        'individual': IndividualSTS,
         'number of team': number_of_team,
         'population size': 100,  # 100 200 500
         'chromosome size': (number_of_team - 1) * (number_of_team // 2),
@@ -739,100 +739,101 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    # param = {
-    #     'configuration name': 'config1',
-    #     'individual': ['algo_gen.individuals.onemax', 'IndividualOneMax'],
-    #
-    #     'population size': 50,  # 100 200 500
-    #     'chromosome size': 100,  # 5 10 50 100
-    #
-    #     'nb turn max': 5000,
-    #     'stop after no change': 5000000,  # int(config['nb turn max']*0.10),
-    #
-    #     'selection':
-    #         ['select_tournament'],
-    #     #     ['adaptative',
-    #     #      'UCB',
-    #     #      [
-    #     #          [0.25, 'select_random'],
-    #     #          [0.25, 'select_best'],
-    #     #          [0.25, 'select_tournament'],
-    #     #          [0.25, 'select_wheel']
-    #     #      ]],
-    #     'proportion selection': 0.04,  # 0.04,  # 2 / population_size
-    #
-    #     'crossover':
-    #         ['mono-point'],
-    #     #     ['adaptative',
-    #     #      'UCB',
-    #     #      [
-    #     #          [0.25, 'mono-point'],
-    #     #          [0.25, 'uniforme'],
-    #     #      ],
-    #     #      0.5],
-    #     'proportion crossover': 0,
-    #
-    #     'mutation':
-    #     # ['3-flip'],
-    #         ['adaptative',
-    #          'UCB',
-    #          # 'fixed roulette wheel' 'adaptive roulette wheel' 'adaptive pursuit' 'UCB'
-    #          [
-    #              [0.25, '1-flip'],
-    #              [0.25, '3-flip'],
-    #              [0.25, '5-flip'],
-    #              [0.25, 'bit-flip']
-    #          ],
-    #          0.05,  # pmin for adaptive roulette wheel and adaptive poursuite
-    #          0.5,  # beta for adaptive poursuit
-    #          ],
-    #     'proportion mutation': 1,  # 0.1 0.2 0.5 0.8
-    #
-    #     'insertion': 'fitness',  # 'age' 'fitness'
-    # }
-    # # 'fixed roulette wheel' 'adaptive roulette wheel' 'adaptive pursuit' 'UCB' 'DMAB'
-    #
-    # diff_mutation = [
-    #     ['adaptative', 'fixed roulette wheel',
-    #      [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], ],
-    #     ['adaptative', 'adaptive roulette wheel',
-    #      [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.05, ],
-    #     ['adaptative', 'adaptive pursuit',
-    #      [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.05, 0.8, ],
-    #     ['adaptative', 'UCB',
-    #      [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], ],
-    # ]
-    #
-    # for mu in diff_mutation:
-    #     param['mutation'] = mu
-    #     population = Population(param)
-    #     population.start()
-    #
-    #     utility = list(map(list, zip(*population.stats['utility'])))
-    #     val = list(map(list, zip(*utility[2])))[1]
-    #
-    #     count = {'1-flip': [0],
-    #              '3-flip': [0],
-    #              '5-flip': [0],
-    #              'bit-flip': [0],
-    #              }
-    #     for v in val:
-    #         for m in ['1-flip', '3-flip', '5-flip', 'bit-flip']:
-    #             count[m].append(count[m][-1] + (1 if v == m else 0))
-    #
-    #     import matplotlib.pyplot as plt
-    #
-    #     fig, ax = plt.subplots(figsize=(10, 10))
-    #
-    #     for m in count.keys():
-    #         ax.plot(list(range(len(count[m]))), count[m], label=m)
-    #     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-    #     import textwrap
-    #
-    #     plt.title("\n".join(textwrap.wrap(str(population.stats['parameters']['mutation'][1]), 120)))
-    #     plt.show()
-    #
-    #     from algo_gen.tools.plot import show_stats
-    #
-    #     show_stats(population.stats)
+    # main()
+    from algo_gen.individuals.onemax import IndividualOneMax
+    param = {
+        'configuration name': 'config1',
+        'individual': IndividualOneMax,
+
+        'population size': 50,  # 100 200 500
+        'chromosome size': 100,  # 5 10 50 100
+
+        'nb turn max': 5000,
+        'stop after no change': 5000000,  # int(config['nb turn max']*0.10),
+
+        'selection':
+            ['select_tournament'],
+        #     ['adaptative',
+        #      'UCB',
+        #      [
+        #          [0.25, 'select_random'],
+        #          [0.25, 'select_best'],
+        #          [0.25, 'select_tournament'],
+        #          [0.25, 'select_wheel']
+        #      ]],
+        'proportion selection': 0.04,  # 0.04,  # 2 / population_size
+
+        'crossover':
+            ['mono-point'],
+        #     ['adaptative',
+        #      'UCB',
+        #      [
+        #          [0.25, 'mono-point'],
+        #          [0.25, 'uniforme'],
+        #      ],
+        #      0.5],
+        'proportion crossover': 0,
+
+        'mutation':
+        # ['3-flip'],
+            ['adaptative',
+             'UCB',
+             # 'fixed roulette wheel' 'adaptive roulette wheel' 'adaptive pursuit' 'UCB'
+             [
+                 [0.25, '1-flip'],
+                 [0.25, '3-flip'],
+                 [0.25, '5-flip'],
+                 [0.25, 'bit-flip']
+             ],
+             0.05,  # pmin for adaptive roulette wheel and adaptive poursuite
+             0.5,  # beta for adaptive poursuit
+             ],
+        'proportion mutation': 1,  # 0.1 0.2 0.5 0.8
+
+        'insertion': 'fitness',  # 'age' 'fitness'
+    }
+    # 'fixed roulette wheel' 'adaptive roulette wheel' 'adaptive pursuit' 'UCB' 'DMAB'
+
+    diff_mutation = [
+        ['adaptative', 'fixed roulette wheel',
+         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], ],
+        ['adaptative', 'adaptive roulette wheel',
+         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.05, ],
+        ['adaptative', 'adaptive pursuit',
+         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.05, 0.8, ],
+        ['adaptative', 'UCB',
+         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], ],
+    ]
+
+    for mu in diff_mutation:
+        param['mutation'] = mu
+        population = Population(param)
+        population.start()
+
+        utility = list(map(list, zip(*population.stats['utility'])))
+        val = list(map(list, zip(*utility[2])))[1]
+
+        count = {'1-flip': [0],
+                 '3-flip': [0],
+                 '5-flip': [0],
+                 'bit-flip': [0],
+                 }
+        for v in val:
+            for m in ['1-flip', '3-flip', '5-flip', 'bit-flip']:
+                count[m].append(count[m][-1] + (1 if v == m else 0))
+
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots(figsize=(10, 10))
+
+        for m in count.keys():
+            ax.plot(list(range(len(count[m]))), count[m], label=m)
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+        import textwrap
+
+        plt.title("\n".join(textwrap.wrap(str(population.stats['parameters']['mutation'][1]), 120)))
+        plt.show()
+
+        from algo_gen.tools.plot import show_stats
+
+        show_stats(population.stats)
