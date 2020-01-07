@@ -27,6 +27,9 @@ class IndividualOneMax(Individual):
     def fitness(self):
         return sum(v.bit for v in self.sequence)
 
+    def mutate(self):
+        pass
+
     def __eq__(self, other):
         if type(other) != type(self):
             return False

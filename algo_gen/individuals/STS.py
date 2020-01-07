@@ -38,6 +38,9 @@ class IndividualSTS(IndividualPermutation):
             nb += sum([0 if i <= 2 else i - 2 for i in present])
         return -nb
 
+    def mutate(self):
+        pass
+
     def basic_order(self):
         return [(i, j) for i in range(0, self.parameters['number of team']) for j in
                 range(i, self.parameters['number of team']) if i != j]

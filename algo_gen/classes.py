@@ -50,6 +50,15 @@ class Individual(ABC):
         pass
 
     @abstractmethod
+    def mutate(self):
+        """
+        mutation called if you use the mutation 'individual'
+        if you need to mutate on the individual instead of the gene
+        :return: None
+        """
+        pass
+
+    @abstractmethod
     def __eq__(self, other):
         pass
 
@@ -90,6 +99,21 @@ class Population:
         self.mutated = []
         self.nb_turns = 0
 
+        if 'function_each_turn' in self.parameters:
+            self.each_turn_fct = self.parameters['function_each_turn']
+        else:
+            self.each_turn_fct = None
+
+        if 'function_end' in self.parameters:
+            self.end_fct = self.parameters['function_end']
+        else:
+            self.end_fct = None
+
+        if 'termination_condition' in self.parameters:
+            self.final_condition = self.parameters['termination_condition']
+        else:
+            self.final_condition = lambda pop: not (pop.nb_turns == pop.parameters['nb turn max'])
+
         self.individual_class = parameters['individual']
 
         individuals = []
@@ -126,6 +150,7 @@ class Population:
                 'pmx': self.crossover_pmx,
             }
             self.method_switch['mutation'] = {
+                'individual': self.mutation_individu,
                 'insert': self.mutation_insert,
                 'swap': self.mutation_swap,
                 'inversion': self.mutation_inversion,
@@ -138,6 +163,7 @@ class Population:
                 'uniforme': self.crossover_uniforme,
             }
             self.method_switch['mutation'] = {
+                'individual': self.mutation_individu,
                 '1-flip': self.mutation_1fip,
                 '3-flip': self.mutation_3fip,
                 '5-flip': self.mutation_5fip,
@@ -160,28 +186,17 @@ class Population:
             s += "\n" + str(i)
         return s
 
-    def final_condition(self):
-        if self.nb_turns >= self.parameters['stop after no change']:
-            last_max = self.stats['max_fitness'][-self.parameters['stop after no change']:]
-            # last_min = self.stats['min_fitness'][-self.parameters['stop after no change']:]
-            max_change = not all(x >= y for x, y in zip(last_max, last_max[1:]))
-            # min_change = not all(x >= y for x, y in zip(last_min, last_min[1:]))
-            return (not (self.nb_turns == self.parameters['nb turn max'])) and max_change
-            # and not (not max_change and not min_change)
-        else:
-            return not (self.nb_turns == self.parameters['nb turn max'])
-
     def start(self):
         self.statistic()
-        if 'function_each_turn' in self.parameters:
-            self.parameters['function_each_turn'](self)
-        while self.final_condition():
+        while self.final_condition(self):
+            if self.each_turn_fct:
+                self.each_turn_fct(self)
             self.population_get_older()
             self.sort_individuals_fitness()
             self.turn()
             self.statistic()
-        if 'function_end' in self.parameters:
-            self.parameters['function_end'](self)
+        if self.end_fct:
+            self.end_fct(self)
 
     def turn(self):
         self.selection()
@@ -554,6 +569,7 @@ class Population:
             self.adaptative('mutation')
         else:
             switch = {
+                'individual': self.mutation_individu,
                 '1-flip': self.mutation_1fip,
                 '3-flip': self.mutation_3fip,
                 '5-flip': self.mutation_5fip,
@@ -564,6 +580,12 @@ class Population:
                 'scramble': self.mutation_scramble,
             }
             switch[self.parameters['mutation'][0]]()
+
+    def mutation_individu(self):
+        self.stats['utility'][-1].append([[], 'individual'])
+        for indiv in self.crossed:
+            indiv.mutate()
+            self.mutated.append(indiv)
 
     def mutation_1fip(self):
         self.stats['utility'][-1].append([[], '1-flip'])
@@ -699,18 +721,18 @@ class Population:
         self.stats['mean_age'].append(statistics.mean(ages))
 
 
-def main():
+def mainpermut():
     number_of_team = 6
     from algo_gen.individuals.STS import IndividualSTS
     parameters = {
         'configuration name': 'config1',
         'individual': IndividualSTS,
         'number of team': number_of_team,
-        'population size': 100,  # 100 200 500
+        'population size': 100,
         'chromosome size': (number_of_team - 1) * (number_of_team // 2),
 
         'nb turn max': 10000,
-        'stop after no change': 500,  # int(config['nb turn max']*0.10),
+        'stop after no change': 500,
 
         'selection':
             ['select_tournament'],
@@ -721,7 +743,7 @@ def main():
         'proportion crossover': 1,
 
         'mutation':
-            ['scramble'],
+            ['individual'],
 
         # 'insert'
         # 'swap'
@@ -738,15 +760,37 @@ def main():
     show_stats(population.stats)
 
 
-if __name__ == '__main__':
-    # main()
+def main():
     from algo_gen.individuals.onemax import IndividualOneMax
+
+    def final_condition(population):
+        if population.nb_turns >= population.parameters['stop after no change']:
+            last_max = population.stats['max_fitness'][-population.parameters['stop after no change']:]
+            # last_min = self.stats['min_fitness'][-self.parameters['stop after no change']:]
+            max_change = not all(x >= y for x, y in zip(last_max, last_max[1:]))
+            # min_change = not all(x >= y for x, y in zip(last_min, last_min[1:]))
+            return (not (population.nb_turns == population.parameters['nb turn max'])) and max_change
+            # and not (not max_change and not min_change)
+        else:
+            return not (population.nb_turns == population.parameters['nb turn max'])
+
+    def function_each_turn(population):
+        pass
+
+    def function_end(population):
+        print(f'fitness max : {population.stats["max_fitness"][-1]}')
+
     param = {
         'configuration name': 'config1',
         'individual': IndividualOneMax,
 
         'population size': 50,  # 100 200 500
         'chromosome size': 100,  # 5 10 50 100
+
+        'termination_condition': final_condition,
+
+        'function_each_turn': function_each_turn,
+        'function_end': function_end,
 
         'nb turn max': 5000,
         'stop after no change': 5000000,  # int(config['nb turn max']*0.10),
@@ -775,19 +819,19 @@ if __name__ == '__main__':
         'proportion crossover': 0,
 
         'mutation':
-        # ['3-flip'],
-            ['adaptative',
-             'UCB',
-             # 'fixed roulette wheel' 'adaptive roulette wheel' 'adaptive pursuit' 'UCB'
-             [
-                 [0.25, '1-flip'],
-                 [0.25, '3-flip'],
-                 [0.25, '5-flip'],
-                 [0.25, 'bit-flip']
-             ],
-             0.05,  # pmin for adaptive roulette wheel and adaptive poursuite
-             0.5,  # beta for adaptive poursuit
-             ],
+        ['individual'],
+        #     ['adaptative',
+        #      'UCB',
+        #      # 'fixed roulette wheel' 'adaptive roulette wheel' 'adaptive pursuit' 'UCB'
+        #      [
+        #          [0.25, '1-flip'],
+        #          [0.25, '3-flip'],
+        #          [0.25, '5-flip'],
+        #          [0.25, 'bit-flip']
+        #      ],
+        #      0.05,  # pmin for adaptive roulette wheel and adaptive poursuite
+        #      0.5,  # beta for adaptive poursuit
+        #      ],
         'proportion mutation': 1,  # 0.1 0.2 0.5 0.8
 
         'insertion': 'fitness',  # 'age' 'fitness'
@@ -809,31 +853,36 @@ if __name__ == '__main__':
         param['mutation'] = mu
         population = Population(param)
         population.start()
-
-        utility = list(map(list, zip(*population.stats['utility'])))
-        val = list(map(list, zip(*utility[2])))[1]
-
-        count = {'1-flip': [0],
-                 '3-flip': [0],
-                 '5-flip': [0],
-                 'bit-flip': [0],
-                 }
-        for v in val:
-            for m in ['1-flip', '3-flip', '5-flip', 'bit-flip']:
-                count[m].append(count[m][-1] + (1 if v == m else 0))
-
-        import matplotlib.pyplot as plt
-
-        fig, ax = plt.subplots(figsize=(10, 10))
-
-        for m in count.keys():
-            ax.plot(list(range(len(count[m]))), count[m], label=m)
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-        import textwrap
-
-        plt.title("\n".join(textwrap.wrap(str(population.stats['parameters']['mutation'][1]), 120)))
-        plt.show()
-
+        #
+        # utility = list(map(list, zip(*population.stats['utility'])))
+        # val = list(map(list, zip(*utility[2])))[1]
+        #
+        # count = {'1-flip': [0],
+        #          '3-flip': [0],
+        #          '5-flip': [0],
+        #          'bit-flip': [0],
+        #          }
+        # for v in val:
+        #     for m in ['1-flip', '3-flip', '5-flip', 'bit-flip']:
+        #         count[m].append(count[m][-1] + (1 if v == m else 0))
+        #
+        # import matplotlib.pyplot as plt
+        #
+        # fig, ax = plt.subplots(figsize=(10, 10))
+        #
+        # for m in count.keys():
+        #     ax.plot(list(range(len(count[m]))), count[m], label=m)
+        # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+        # import textwrap
+        #
+        # plt.title("\n".join(textwrap.wrap(str(population.stats['parameters']['mutation'][1]), 120)))
+        # plt.show()
+        #
         from algo_gen.tools.plot import show_stats
 
         show_stats(population.stats)
+
+
+if __name__ == '__main__':
+    main()
+    # mainpermut()
