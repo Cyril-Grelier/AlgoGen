@@ -1,3 +1,5 @@
+from random import randint
+
 from algo_gen.classes import Individual, Gene
 
 
@@ -26,6 +28,14 @@ class IndividualOneMax(Individual):
 
     def fitness(self):
         return sum(v.bit for v in self.sequence)
+
+    def crossover(self, other):
+        fc = IndividualOneMax(self.parameters)
+        sc = IndividualOneMax(self.parameters)
+        rand = randint(1, len(self.sequence))
+        fc[::] = self[0:rand] + other[rand:]
+        sc[::] = other[0:rand] + self[rand:]
+        return fc, sc
 
     def mutate(self):
         pass

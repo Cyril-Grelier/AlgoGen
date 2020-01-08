@@ -38,6 +38,9 @@ class IndividualSTS(IndividualPermutation):
             nb += sum([0 if i <= 2 else i - 2 for i in present])
         return -nb
 
+    def crossover(self, other):
+        return IndividualSTS(self.parameters), IndividualSTS(self.parameters)
+
     def mutate(self):
         pass
 

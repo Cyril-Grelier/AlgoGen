@@ -50,6 +50,16 @@ class Individual(ABC):
         pass
 
     @abstractmethod
+    def crossover(self, other):
+        """
+        crossover used if you use the crossover 'individual
+        :param other: the second parent for the crossover
+        :type other: Individual
+        :return: the
+        """
+        pass
+
+    @abstractmethod
     def mutate(self):
         """
         mutation called if you use the mutation 'individual'
@@ -146,6 +156,7 @@ class Population:
         }
         if isinstance(self.individuals[0][0], IndividualPermutation):
             self.method_switch['crossover'] = {
+                'individual': self.crossover_individual,
                 'order 1': self.crossover_order_1,
                 'pmx': self.crossover_pmx,
             }
@@ -158,6 +169,7 @@ class Population:
             }
         else:
             self.method_switch['crossover'] = {
+                'individual': self.crossover_individual,
                 'mono-point': self.crossover_monopoint,
                 'multipoint': self.crossover_multipoint,
                 'uniforme': self.crossover_uniforme,
@@ -370,6 +382,7 @@ class Population:
             self.adaptative('crossover')
         else:
             switch = {
+                'individual': self.crossover_individual,
                 'mono-point': self.crossover_monopoint,
                 'multipoint': self.crossover_multipoint,
                 'uniforme': self.crossover_uniforme,
@@ -377,6 +390,29 @@ class Population:
                 'pmx': self.crossover_pmx,
             }
             switch[self.parameters['crossover'][0]]()
+
+    def crossover_individual(self):
+        self.stats['utility'][-1].append([[], 'individual'])
+        for i in range(0, len(self.selected), 2):
+            first_child, second_child = None, None
+            if random.random() <= self.parameters['proportion crossover']:
+                if len(self.selected) <= i + 1:
+                    rand = random.choice(self.selected[0:-1])
+                    i1 = self.selected[-1]
+                    i2 = rand
+                else:
+                    i1 = self.selected[i]
+                    i2 = self.selected[i + 1]
+                first_child, second_child = i1.crossover(i2)
+            else:
+                first_child.sequence = deepcopy(self.selected[i][::])
+                # the second child will be a copy of a random parents from the selected parents if the number
+                # of parents is odd
+                sc = random.randrange(len(self.selected[0:-1])) if len(self.selected) <= i + 1 else i + 1
+                second_child.sequence = deepcopy(self.selected[sc].sequence)
+            self.stats['utility'][-1][-1][0].extend([first_child.fitness(), second_child.fitness()])
+            self.crossed.extend([first_child, second_child])
+        self.stats['utility'][-1][-1][0] = statistics.mean(self.stats['utility'][-1][-1][0])
 
     def crossover_monopoint(self):
         self.stats['utility'][-1].append([[], 'monopoint'])
@@ -808,7 +844,7 @@ def main():
         'proportion selection': 0.04,  # 0.04,  # 2 / population_size
 
         'crossover':
-            ['mono-point'],
+            ['individual'],
         #     ['adaptative',
         #      'UCB',
         #      [
@@ -816,10 +852,10 @@ def main():
         #          [0.25, 'uniforme'],
         #      ],
         #      0.5],
-        'proportion crossover': 0,
+        'proportion crossover': 1,
 
         'mutation':
-        ['individual'],
+            ['individual'],
         #     ['adaptative',
         #      'UCB',
         #      # 'fixed roulette wheel' 'adaptive roulette wheel' 'adaptive pursuit' 'UCB'
