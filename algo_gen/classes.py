@@ -97,12 +97,12 @@ class IndividualPermutation(Individual, ABC):
 
 class Population:
 
-    def __init__(self, parameters):
+    def __init__(self, parameters, description=False):
         self.individuals = []
         self.parameters = parameters
         self.stats = {
             'max_fitness': [], 'min_fitness': [], 'mean_fitness': [], 'fitness_diversity': [], "total_fitness": [],
-            'diversity': [], 'max_age': [], 'mean_age': [], 'parameters': parameters, 'time': 0.0, 'utility': []
+            'diversity': [], 'max_age': [], 'mean_age': [], 'parameters': parameters, 'utility': []
         }
         self.selected = []
         self.crossed = []
@@ -132,21 +132,24 @@ class Population:
 
         fits = [i.fitness() for i in individuals]
         self.individuals = [(i, f, 0) for i, f in sorted(zip(individuals, fits), key=lambda z: z[1])]
-
-        self.nb_select = int(len(self.individuals) * self.parameters['proportion selection'])
-        description = f'Population parameters :' \
-                      f'\n\tIndividuals : {self.individual_class}' \
-                      f'\n\tSize of an individual : {self.parameters["chromosome size"]}' \
-                      f'\n\tSize of the population : {self.parameters["population size"]}' \
-                      f'\n\tnb turn max : {self.parameters["nb turn max"]}' \
-                      f'\n\tNumber of individuals selected each turns : {self.nb_select}' \
-                      f'\n\tSelection : {self.parameters["selection"]}' \
-                      f'\n\tCrossover : {self.parameters["crossover"]} (' \
-                      f'{self.parameters["proportion crossover"] * 100}%)' \
-                      f'\n\tMutation : {self.parameters["mutation"]} (' \
-                      f'{self.parameters["proportion mutation"] * 100}%)' \
-                      f'\n\tInsertion : {self.parameters["insertion"]}'
-        print(description)
+        if self.parameters['proportion selection'] > 1:
+            self.nb_select = self.parameters['proportion selection']
+        else:
+            self.nb_select = int(len(self.individuals) * self.parameters['proportion selection'])
+        if description:
+            description = f'Population parameters :' \
+                          f'\n\tIndividuals : {self.individual_class}' \
+                          f'\n\tSize of an individual : {self.parameters["chromosome size"]}' \
+                          f'\n\tSize of the population : {self.parameters["population size"]}' \
+                          f'\n\tnb turn max : {self.parameters["nb turn max"]}' \
+                          f'\n\tNumber of individuals selected each turns : {self.nb_select}' \
+                          f'\n\tSelection : {self.parameters["selection"]}' \
+                          f'\n\tCrossover : {self.parameters["crossover"]} (' \
+                          f'{self.parameters["proportion crossover"] * 100}%)' \
+                          f'\n\tMutation : {self.parameters["mutation"]} (' \
+                          f'{self.parameters["proportion mutation"] * 100}%)' \
+                          f'\n\tInsertion : {self.parameters["insertion"]}'
+            print(description)
         self.method_switch = dict()
         self.method_switch['selection'] = {
             'select_random': self.select_random,
@@ -154,33 +157,25 @@ class Population:
             'select_tournament': self.select_tournament,
             'select_wheel': self.select_wheel,
         }
-        if isinstance(self.individuals[0][0], IndividualPermutation):
-            self.method_switch['crossover'] = {
-                'individual': self.crossover_individual,
-                'order 1': self.crossover_order_1,
-                'pmx': self.crossover_pmx,
-            }
-            self.method_switch['mutation'] = {
-                'individual': self.mutation_individu,
-                'insert': self.mutation_insert,
-                'swap': self.mutation_swap,
-                'inversion': self.mutation_inversion,
-                'scramble': self.mutation_scramble,
-            }
-        else:
-            self.method_switch['crossover'] = {
-                'individual': self.crossover_individual,
-                'mono-point': self.crossover_monopoint,
-                'multipoint': self.crossover_multipoint,
-                'uniforme': self.crossover_uniforme,
-            }
-            self.method_switch['mutation'] = {
-                'individual': self.mutation_individu,
-                '1-flip': self.mutation_1fip,
-                '3-flip': self.mutation_3fip,
-                '5-flip': self.mutation_5fip,
-                'bit-flip': self.mutation_bitfip,
-            }
+        self.method_switch['crossover'] = {
+            'individual': self.crossover_individual,
+            'order 1': self.crossover_order_1,
+            'pmx': self.crossover_pmx,
+            'mono-point': self.crossover_monopoint,
+            'multipoint': self.crossover_multipoint,
+            'uniforme': self.crossover_uniforme,
+        }
+        self.method_switch['mutation'] = {
+            'individual': self.mutation_individu,
+            'insert': self.mutation_insert,
+            'swap': self.mutation_swap,
+            'inversion': self.mutation_inversion,
+            'scramble': self.mutation_scramble,
+            '1-flip': self.mutation_1fip,
+            '3-flip': self.mutation_3fip,
+            '5-flip': self.mutation_5fip,
+            'bit-flip': self.mutation_bitfip,
+        }
 
     def sort_individuals_fitness(self):
         self.individuals.sort(key=lambda i: i[1], reverse=True)
@@ -243,14 +238,14 @@ class Population:
         }
         rank = switch[method]
         utility = list(map(list, zip(*self.stats['utility'][:-1])))
-        utility = utility[-5:]
+        utility = utility[-20:]
         n = len(self.parameters[method][2])
         if len(utility) >= rank:
             sum_uk = sum([u for u, _ in utility[rank]])
             for i in range(len(self.parameters[method][2])):
                 m = self.parameters[method][2][i][1]
                 u_n = sum([u for u, me in utility[rank] if m == me])
-                self.parameters[method][2][i][0] = pmin + (1 - n * pmin) * (u_n / sum_uk if sum_uk != 0 else 0)
+                self.parameters[method][2][i][0] = pmin + (1 - n * pmin) * (u_n / sum_uk if sum_uk != 0 else 1)
         self.adaptative_fixe(method)
 
     def adaptative_poursuit(self, method):
@@ -261,11 +256,10 @@ class Population:
         }
         rank = switch[method]
         utility = list(map(list, zip(*self.stats['utility'][:-1])))
-        # if len(utility) > 50:
-        #     utility = utility[-100:]
-        #     if len(utility) % 50 == 0:
-        #         for i in range(len(self.parameters[method][2])):
-        #             self.parameters[method][2][i][0] = 1 / len(self.parameters[method][2])
+        if len(utility) % 10 == 0:
+            for i in range(len(self.parameters[method][2])):
+                self.parameters[method][2][i][0] = 1 / len(self.parameters[method][2])
+        utility = utility[-20:]
         if len(utility) >= rank:
             pmin = self.parameters[method][3]
             pmax = 1 - (len(self.parameters[method][2]) - 1) * pmin
@@ -274,10 +268,9 @@ class Population:
             utilities = []
             for i in range(len(self.parameters[method][2])):
                 methode = self.parameters[method][2][i][1]
-                nb_i = [m[1] for m in past_selected].count(methode)
                 utilities.append(sum([u for u, me in past_selected if methode in me]))
-            maxi = max(self.parameters[method][2], key=lambda e: e[0])[0]
-            indices = [i for i, v in enumerate(self.parameters[method][2]) if v[0] == maxi]
+            maxi = max(utilities)
+            indices = [i for i, v in enumerate(utilities) if v == maxi]
             best = random.choice(indices)
             for i in range(len(self.parameters[method][2])):
                 tminus1 = self.parameters[method][2][i][0]
@@ -310,9 +303,6 @@ class Population:
         indices = [i for i, v in enumerate(self.parameters[method][2]) if v[0] == maxi]
         choosen = random.choice(indices)
         self.method_switch[method][self.parameters[method][2][choosen][1]]()
-
-    def adaptative_dmab(self):
-        pass
 
     ###############################################################
     #                       Selection                             #
@@ -395,7 +385,8 @@ class Population:
         self.stats['utility'][-1].append([[], 'individual'])
         for i in range(0, len(self.selected), 2):
             first_child, second_child = None, None
-            if random.random() <= self.parameters['proportion crossover']:
+            rand_cross = random.random()
+            if rand_cross < self.parameters['proportion crossover']:
                 if len(self.selected) <= i + 1:
                     rand = random.choice(self.selected[0:-1])
                     i1 = self.selected[-1]
@@ -415,11 +406,12 @@ class Population:
         self.stats['utility'][-1][-1][0] = statistics.mean(self.stats['utility'][-1][-1][0])
 
     def crossover_monopoint(self):
-        self.stats['utility'][-1].append([[], 'monopoint'])
+        self.stats['utility'][-1].append([[], 'mono-point'])
         for i in range(0, len(self.selected), 2):
             first_child = self.individual_class(self.parameters)
             second_child = self.individual_class(self.parameters)
-            if random.random() <= self.parameters['proportion crossover']:
+            rand_cross = random.random()
+            if rand_cross < self.parameters['proportion crossover']:
                 if len(self.selected) <= i + 1:
                     rand = random.choice(self.selected[0:-1])
                     i1 = self.selected[-1]
@@ -445,7 +437,8 @@ class Population:
         for i in range(0, len(self.selected), 2):
             first_child = self.individual_class(self.parameters)
             second_child = self.individual_class(self.parameters)
-            if random.random() <= self.parameters['proportion crossover']:
+            rand_cross = random.random()
+            if rand_cross < self.parameters['proportion crossover']:
                 if len(self.selected) <= i + 1:
                     rand = random.choice(self.selected[0:-1])
                     i1 = self.selected[-1]
@@ -472,7 +465,8 @@ class Population:
         for i in range(0, len(self.selected), 2):
             first_child = self.individual_class(self.parameters)
             second_child = self.individual_class(self.parameters)
-            if random.random() <= self.parameters['proportion crossover']:
+            rand_cross = random.random()
+            if rand_cross < self.parameters['proportion crossover']:
                 if len(self.selected) <= i + 1:
                     rand = random.choice(self.selected[0:-1])
                     i1 = self.selected[-1]
@@ -760,76 +754,135 @@ class Population:
 def mainpermut():
     number_of_team = 6
     from algo_gen.individuals.STS import IndividualSTS
+
+    def final_condition(population):
+        if population.stats['max_fitness'][-1] == 0:
+            return False
+        else:
+            return not (population.nb_turns == population.parameters['nb turn max'])
+
     parameters = {
         'configuration name': 'config1',
         'individual': IndividualSTS,
+        'only weeks': False,
         'number of team': number_of_team,
         'population size': 100,
         'chromosome size': (number_of_team - 1) * (number_of_team // 2),
 
+        'termination_condition': final_condition,
+
         'nb turn max': 10000,
-        'stop after no change': 500,
+        # 'stop after no change': 10000,
 
         'selection':
             ['select_tournament'],
-        'proportion selection': 0.1,  # 0.04,  # 2 / population_size
+        'proportion selection': 0.2,  # 0.04,  # 2 / population_size
 
         'crossover':
             ['pmx'],
         'proportion crossover': 1,
 
         'mutation':
-            ['individual'],
-
+        # ['inversion'],
+            ['adaptative',
+             'adaptive pursuit',
+             # 'fixed roulette wheel' 'adaptive roulette wheel' 'adaptive pursuit' 'UCB'
+             [
+                 [0.25, 'insert'],
+                 [0.25, 'swap'],
+                 [0.25, 'inversion'],
+                 [0.25, 'scramble']
+             ]
+                , 0.1,
+             0.3
+             ],
         # 'insert'
         # 'swap'
         # 'inversion'
         # 'scramble'
 
-        'proportion mutation': 0.2,  # 0.1 0.2 0.5 0.8
+        'proportion mutation': 0.5,  # 0.1 0.2 0.5 0.8
 
         'insertion': 'age',  # 'age' 'fitness'
     }
-    population = Population(parameters)
-    population.start()
-    from algo_gen.tools.plot import show_stats
-    show_stats(population.stats)
+    crossover = [['order 1'], ['pmx']]
+    mutation = [['insert'], ['swap'], ['inversion'], ['scramble']]
+    for cross in crossover:
+        parameters['crossover'] = cross
+        for mut in mutation:
+            parameters['mutation'] = mut
+            population = Population(parameters)
+            population.start()
+            from algo_gen.tools.plot import show_stats
+            show_stats(population.stats)
+
+    utility = list(map(list, zip(*population.stats['utility'])))
+    val = list(map(list, zip(*utility[2])))[1]
+
+    count = {'insert': [0],
+             'swap': [0],
+             'inversion': [0],
+             'scramble': [0],
+             }
+    for v in val:
+        for m in ['insert', 'swap', 'inversion', 'scramble']:
+            count[m].append(count[m][-1] + (1 if v == m else 0))
+
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    for m in count.keys():
+        ax.plot(list(range(len(count[m]))), count[m], label=m)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    import textwrap
+
+    plt.title("\n".join(textwrap.wrap(str(population.stats['parameters']['mutation'][1]), 120)))
+    plt.show()
 
 
 def main():
     from algo_gen.individuals.onemax import IndividualOneMax
 
     def final_condition(population):
-        if population.nb_turns >= population.parameters['stop after no change']:
-            last_max = population.stats['max_fitness'][-population.parameters['stop after no change']:]
-            # last_min = self.stats['min_fitness'][-self.parameters['stop after no change']:]
-            max_change = not all(x >= y for x, y in zip(last_max, last_max[1:]))
-            # min_change = not all(x >= y for x, y in zip(last_min, last_min[1:]))
-            return (not (population.nb_turns == population.parameters['nb turn max'])) and max_change
-            # and not (not max_change and not min_change)
+        if population.stats['max_fitness'][-1] == population.parameters['chromosome size']:
+            return False
         else:
             return not (population.nb_turns == population.parameters['nb turn max'])
 
-    def function_each_turn(population):
-        pass
+    # def final_condition(population):
+    #     if population.stats['max_fitness'][-1] == population.parameters['chromosome size']:
+    #         return False
+    #     if population.nb_turns >= population.parameters['stop after no change']:
+    #         last_max = population.stats['max_fitness'][-population.parameters['stop after no change']:]
+    #         # last_min = self.stats['min_fitness'][-self.parameters['stop after no change']:]
+    #         max_change = not all(x >= y for x, y in zip(last_max, last_max[1:]))
+    #         # min_change = not all(x >= y for x, y in zip(last_min, last_min[1:]))
+    #         return (not (population.nb_turns == population.parameters['nb turn max'])) and max_change
+    #         # and not (not max_change and not min_change)
+    #     else:
+    #         return not (population.nb_turns == population.parameters['nb turn max'])
 
-    def function_end(population):
-        print(f'fitness max : {population.stats["max_fitness"][-1]}')
+    # def function_each_turn(population):
+    #     pass
+    #
+    # def function_end(population):
+    #     print(f'fitness max : {population.stats["max_fitness"][-1]}')
 
     param = {
         'configuration name': 'config1',
         'individual': IndividualOneMax,
 
-        'population size': 50,  # 100 200 500
+        'population size': 100,  # 100 200 500
         'chromosome size': 100,  # 5 10 50 100
 
         'termination_condition': final_condition,
 
-        'function_each_turn': function_each_turn,
-        'function_end': function_end,
+        # 'function_each_turn': function_each_turn,
+        # 'function_end': function_end,
 
         'nb turn max': 5000,
-        'stop after no change': 5000000,  # int(config['nb turn max']*0.10),
+        # 'stop after no change': 5000000,  # int(config['nb turn max']*0.10),
 
         'selection':
             ['select_tournament'],
@@ -841,10 +894,10 @@ def main():
         #          [0.25, 'select_tournament'],
         #          [0.25, 'select_wheel']
         #      ]],
-        'proportion selection': 0.04,  # 0.04,  # 2 / population_size
+        'proportion selection': 0.02,  # 0.04,  # 2 / population_size
 
         'crossover':
-            ['individual'],
+            ['uniforme'],
         #     ['adaptative',
         #      'UCB',
         #      [
@@ -874,51 +927,168 @@ def main():
     }
     # 'fixed roulette wheel' 'adaptive roulette wheel' 'adaptive pursuit' 'UCB' 'DMAB'
 
+    pmin = 0.15
+    beta = 1.5
     diff_mutation = [
-        ['adaptative', 'fixed roulette wheel',
-         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], ],
+        # ['adaptative', 'fixed roulette wheel',
+        #  [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], ],
         ['adaptative', 'adaptive roulette wheel',
-         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.05, ],
-        ['adaptative', 'adaptive pursuit',
-         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.05, 0.8, ],
-        ['adaptative', 'UCB',
-         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], ],
+         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.10, ],
+        ['adaptative', 'adaptive roulette wheel',
+         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.10, ],
+        ['adaptative', 'adaptive roulette wheel',
+         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.10, ],
+        ['adaptative', 'adaptive roulette wheel',
+         [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], 0.10, ],
+        # ['adaptative', 'adaptive pursuit',
+        #  [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], pmin, beta, ],
+        # ['adaptative', 'UCB',
+        #  [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'], [0.25, 'bit-flip']], ],
     ]
 
     for mu in diff_mutation:
         param['mutation'] = mu
         population = Population(param)
         population.start()
-        #
-        # utility = list(map(list, zip(*population.stats['utility'])))
-        # val = list(map(list, zip(*utility[2])))[1]
-        #
-        # count = {'1-flip': [0],
-        #          '3-flip': [0],
-        #          '5-flip': [0],
-        #          'bit-flip': [0],
-        #          }
-        # for v in val:
-        #     for m in ['1-flip', '3-flip', '5-flip', 'bit-flip']:
-        #         count[m].append(count[m][-1] + (1 if v == m else 0))
-        #
-        # import matplotlib.pyplot as plt
-        #
-        # fig, ax = plt.subplots(figsize=(10, 10))
-        #
-        # for m in count.keys():
-        #     ax.plot(list(range(len(count[m]))), count[m], label=m)
-        # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-        # import textwrap
-        #
-        # plt.title("\n".join(textwrap.wrap(str(population.stats['parameters']['mutation'][1]), 120)))
-        # plt.show()
-        #
+        print(population.parameters['mutation'])
+        utility = list(map(list, zip(*population.stats['utility'])))
+        val = list(map(list, zip(*utility[2])))[1]
+
+        count = {'1-flip': [0],
+                 '3-flip': [0],
+                 '5-flip': [0],
+                 'bit-flip': [0],
+                 }
+        for v in val:
+            for m in ['1-flip', '3-flip', '5-flip', 'bit-flip']:
+                count[m].append(count[m][-1] + (1 if v == m else 0))
+
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots(figsize=(10, 10))
+
+        for m in count.keys():
+            ax.plot(list(range(len(count[m]))), count[m], label=m)
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+
+        plt.title(population.stats['parameters']['mutation'][1])
+        plt.show()
+
         from algo_gen.tools.plot import show_stats
 
         show_stats(population.stats)
 
 
+def main_meilleur():
+    from algo_gen.individuals.onemax import IndividualOneMax
+    def final_condition(population):
+        if population.stats['max_fitness'][-1] == population.parameters['chromosome size']:
+            return False
+        else:
+            return not (population.nb_turns == population.parameters['nb turn max'])
+
+    parametres = {
+        'individual': IndividualOneMax,
+
+        'population size': 100,
+        'chromosome size': 100,
+
+        'termination_condition': final_condition,
+
+        'nb turn max': 10000,
+
+        'selection': ['select_best'],
+        'proportion selection': 0.60,
+
+        'crossover': ['uniforme'],
+        'proportion crossover': 1,
+
+        'mutation': [
+            'adaptative',
+            'UCB',
+            [[0.25, '1-flip'], [0.25, '3-flip'], [0.25, '5-flip'],
+             [0.25, 'bit-flip']],
+        ],
+        'proportion mutation': 1,
+
+        'insertion': 'fitness',
+    }
+    population = Population(parametres)
+    population.start()
+    # utility = list(map(list, zip(*population.stats['utility'])))
+    # val = list(map(list, zip(*utility[2])))[1]
+    #
+    # count = {'1-flip': [0],
+    #          '3-flip': [0],
+    #          '5-flip': [0],
+    #          'bit-flip': [0],
+    #          }
+    # for v in val:
+    #     for m in ['1-flip', '3-flip', '5-flip', 'bit-flip']:
+    #         count[m].append(count[m][-1] + (1 if v == m else 0))
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # fig, ax = plt.subplots(figsize=(10, 10))
+    #
+    # for m in count.keys():
+    #     ax.plot(list(range(len(count[m]))), count[m], label=m)
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    # import textwrap
+    #
+    # plt.title("\n".join(textwrap.wrap(str(population.stats['parameters']['mutation'][1]), 120)))
+    # plt.show()
+    from algo_gen.tools.plot import show_stats
+
+    show_stats(population.stats)
+
+
+def main_meilleur_perm():
+    from algo_gen.individuals.STS import IndividualSTS
+
+    def final_condition(population):
+        if population.stats['max_fitness'][-1] == 0:
+            return False
+        else:
+            return not (population.nb_turns == population.parameters['nb turn max'])
+
+    number_of_team = 14
+
+    parametres = {
+        'individual': IndividualSTS,
+        'only weeks': True,
+        'number of team': number_of_team,
+
+        'population size': 100,
+        'chromosome size': (number_of_team - 1) * (number_of_team // 2),
+
+        'termination_condition': final_condition,
+
+        'nb turn max': 5000,
+
+        'selection': ['select_tournament'],
+        'proportion selection': 0.2,
+
+        'crossover': ['pmx'],
+        'proportion crossover': 1,
+
+        'mutation': ['swap'],
+        'proportion mutation': 0.2,
+
+        'insertion': 'age',
+    }
+    population = Population(parametres)
+    population.start()
+
+    from algo_gen.tools.plot import show_stats
+
+    show_stats(population.stats)
+
+
 if __name__ == '__main__':
-    main()
+    import time
+
+    start_time = time.time()
+    main_meilleur_perm()
     # mainpermut()
+    print("--- %s seconds ---" % (time.time() - start_time))

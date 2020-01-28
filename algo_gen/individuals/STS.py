@@ -30,12 +30,13 @@ class IndividualSTS(IndividualPermutation):
                 present[b] += 1
             nb += sum(list(map(abs, present)))  # [abs(ab) for ab in present])
         m_t = transpose(m)
-        for periode in m_t:
-            present = [0] * self.n
-            for a, b in periode:
-                present[a] += 1
-                present[b] += 1
-            nb += sum([0 if i <= 2 else i - 2 for i in present])
+        if not self.parameters['only weeks']:
+            for periode in m_t:
+                present = [0] * self.n
+                for a, b in periode:
+                    present[a] += 1
+                    present[b] += 1
+                nb += sum([0 if i <= 2 else i - 2 for i in present])
         return -nb
 
     def crossover(self, other):
