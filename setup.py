@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="algo_gen",  # Replace with your own username
-    version="0.15",
+    version="0.16",
     author="Cyril-Grl",
     #    author_email="Cyril-Grl",
     description="Genetic Algorithm",

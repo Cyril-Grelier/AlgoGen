@@ -1,0 +1,11 @@
+# debut
+python setup.py sdist
+twine upload dist/*
+
+# update
+python setup.py bdist_wheel
+twine upload --skip-existing dist/*
+
+
+# installation / upgrade
+pip install algo-gen --upgrade
