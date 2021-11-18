@@ -28,7 +28,11 @@ def gridsearch(base_parameter, dict_changements):
         nb_tests += 1
 
     for i, currents_changements in enumerate(iterate([dict_changements])):
-        print(f'\r{i}/{nb_tests} : {i * 100 / nb_tests:2.2f} -- {currents_changements}' + ' ' * 30, end='')
+        print(
+            f"\r{i}/{nb_tests} : {i * 100 / nb_tests:2.2f} -- {currents_changements}"
+            + " " * 30,
+            end="",
+        )
         for k, v in currents_changements.items():
             base_parameter[k] = v
         # base_parameter['stop after no change'] = int(base_parameter['nb turn max'] * 0.10)
@@ -40,10 +44,13 @@ def gridsearch(base_parameter, dict_changements):
 
 
 def gridsearch_multipross(base_parameter, dict_changements):
-    backend = 'multiprocessing'
-    Parallel(n_jobs=8, backend=backend)(delayed(
-        launcher_for_gridsearch_mp)(copy.deepcopy(base_parameter), currents_changements, i)
-                                        for i, currents_changements in enumerate(iterate([dict_changements])))
+    backend = "multiprocessing"
+    Parallel(n_jobs=8, backend=backend)(
+        delayed(launcher_for_gridsearch_mp)(
+            copy.deepcopy(base_parameter), currents_changements, i
+        )
+        for i, currents_changements in enumerate(iterate([dict_changements]))
+    )
 
 
 def launcher_for_gridsearch_mp(base, changements, file_name):
@@ -55,37 +62,31 @@ def launcher_for_gridsearch_mp(base, changements, file_name):
     start = time.time()
     stats = population.start()
     stop = time.time()
-    stats['time'] = float(stop - start)
+    stats["time"] = float(stop - start)
     save_stats_parameters(stats, file_name)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parameter = {
-        'configuration name': 'config1',
-        'individual': ['onemax', 'IndividualOneMax'],
-
-        'population size': 50,  # 100 200 500
-        'chromosome size': 20,  # 5 10 50 100
-
-        'nb turn max': 500,
-        'stop after no change': 50,  # int(config['nb turn max']*0.10)
-
-        'selection': 'select_tournament',  # 'select_random' 'select_best' 'select_tournament'
-        'proportion selection': 0.04,  # 2 / config['population size']
-        'nb selected tournament': 20,  # int(config['population size']*0.4)
-
-        'proportion crossover': 1,
-        'type crossover': 'uniforme',  # 'mono-point' 'uniforme'
-
-        'mutation': ['n-flip', 3],
+        "configuration name": "config1",
+        "individual": ["onemax", "IndividualOneMax"],
+        "population size": 50,  # 100 200 500
+        "chromosome size": 20,  # 5 10 50 100
+        "nb turn max": 500,
+        "stop after no change": 50,  # int(config['nb turn max']*0.10)
+        "selection": "select_tournament",  # 'select_random' 'select_best' 'select_tournament'
+        "proportion selection": 0.04,  # 2 / config['population size']
+        "nb selected tournament": 20,  # int(config['population size']*0.4)
+        "proportion crossover": 1,
+        "type crossover": "uniforme",  # 'mono-point' 'uniforme'
+        "mutation": ["n-flip", 3],
         # ['n-flip', 1] ['n-flip', 3] ['n-flip', 5] ['bit-flip', 0.2] ['bit-flip', 0.5] ['bit-flip', 0.8]
-        'proportion mutation': 0.2,  # 0.1 0.2 0.5 0.8
-
-        'insertion': 'age',  # 'age' 'fitness'
+        "proportion mutation": 0.2,  # 0.1 0.2 0.5 0.8
+        "insertion": "age",  # 'age' 'fitness'
     }
     changement = {
-        'population size': [50, 100, 500],
-        'chromosome size': [10, 50, 100],
+        "population size": [50, 100, 500],
+        "chromosome size": [10, 50, 100],
     }
 
     gridsearch_multipross(parameter, changement)

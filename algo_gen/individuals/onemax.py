@@ -1,10 +1,9 @@
 from random import randint
 
-from algo_gen.classes import Individual, Gene
+from algo_gen.classes import Gene, Individual
 
 
 class GeneOneMax(Gene):
-
     def __init__(self):
         super().__init__()
         self.bit = 0
@@ -20,10 +19,9 @@ class GeneOneMax(Gene):
 
 
 class IndividualOneMax(Individual):
-
     def __init__(self, parameters, empty=False):
         super().__init__(parameters, empty=empty)
-        for _ in range(parameters['chromosome size']):
+        for _ in range(parameters["chromosome size"]):
             self.sequence.append(GeneOneMax())
 
     def fitness(self):

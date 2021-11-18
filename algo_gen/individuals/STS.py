@@ -5,19 +5,20 @@ from algo_gen.classes import IndividualPermutation
 
 
 class IndividualSTS(IndividualPermutation):
-
     def __init__(self, parameters, empty=False):
         super().__init__(parameters, empty=empty)
-        if parameters['number of team'] % 2 != 0:
+        if parameters["number of team"] % 2 != 0:
             print("Error, the number of team must be a pair number")
             exit(1)
-        self.n = parameters['number of team']
+        self.n = parameters["number of team"]
         self.s = self.n - 1
         self.p = self.n // 2
         if empty:
             self.sequence = [None] * (self.s * self.p)
         else:
-            self.sequence = [(i, j) for i in range(0, self.n) for j in range(i, self.n) if i != j]
+            self.sequence = [
+                (i, j) for i in range(0, self.n) for j in range(i, self.n) if i != j
+            ]
             random.shuffle(self.sequence)
 
     def fitness(self):
@@ -30,7 +31,7 @@ class IndividualSTS(IndividualPermutation):
                 present[b] += 1
             nb += sum(list(map(abs, present)))  # [abs(ab) for ab in present])
         m_t = transpose(m)
-        if not self.parameters['only weeks']:
+        if not self.parameters["only weeks"]:
             for periode in m_t:
                 present = [0] * self.n
                 for a, b in periode:
@@ -46,8 +47,12 @@ class IndividualSTS(IndividualPermutation):
         pass
 
     def basic_order(self):
-        return [(i, j) for i in range(0, self.parameters['number of team']) for j in
-                range(i, self.parameters['number of team']) if i != j]
+        return [
+            (i, j)
+            for i in range(0, self.parameters["number of team"])
+            for j in range(i, self.parameters["number of team"])
+            if i != j
+        ]
 
     def __eq__(self, other):
         if type(other) != type(self):
@@ -59,9 +64,9 @@ class IndividualSTS(IndividualPermutation):
 
     def __repr__(self):
         r = ""
-        s = self.parameters['number of team'] - 1
-        p = self.parameters['number of team'] // 2
-        m = [self.sequence[i * p:i * p + p] for i in range(s)]
+        s = self.parameters["number of team"] - 1
+        p = self.parameters["number of team"] // 2
+        m = [self.sequence[i * p : i * p + p] for i in range(s)]
         r += pformat(m, indent=1)
         r += f" {self.fitness()}"
         return r
@@ -74,7 +79,7 @@ class IndividualSTS(IndividualPermutation):
 
 
 def r_to_m(r, s, p):
-    return [r[i * p:i * p + p] for i in range(s)]
+    return [r[i * p : i * p + p] for i in range(s)]
 
 
 def m_to_r(m):
@@ -113,20 +118,6 @@ def nombre_incoherences_semaine(m, n):
             present[b] += 1
         nb += sum(list(map(abs, present)))  # [abs(ab) for ab in present])
     return nb
-
-
-def matrice_incoherences_semaine(m, n):
-    matrice_incoherences = [[0] * (n // 2) for _ in range(n - 1)]
-    for num_s, semaine in enumerate(m):
-        present = [-1] * n
-        for a, b in semaine:
-            present[a] += 1
-            present[b] += 1
-        inco = list(map(abs, present))
-        for num_p, ab in enumerate(semaine):
-            a, b = ab
-            matrice_incoherences[num_s][num_p] += (inco[a] > 0) + (inco[b] > 0)
-    return matrice_incoherences
 
 
 def matrice_incoherences_semaine(m, n):

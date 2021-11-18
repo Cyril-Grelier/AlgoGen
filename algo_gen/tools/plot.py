@@ -16,11 +16,13 @@ sns.set()
 
 def save_stats(stats, label, name):
     for s in stats:
-        s['parameters']['individual'] = 'onemax'
-        s['parameters']['termination_condition'] = 'final_condition'
+        s["parameters"]["individual"] = "onemax"
+        s["parameters"]["termination_condition"] = "final_condition"
     for i, sl in enumerate(zip(stats, label)):
         s, l = sl
-        with open("test_results/" + str(i).zfill(3) + "_" + name + "_" + str(l) + ".json", 'w') as f:
+        with open(
+            "test_results/" + str(i).zfill(3) + "_" + name + "_" + str(l) + ".json", "w"
+        ) as f:
             json.dump(s, f)
 
 
@@ -44,8 +46,14 @@ def annot_max(x, y, ax=None):
         ax = plt.gca()
     bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
     arrowprops = dict(arrowstyle="->", connectionstyle="angle,angleA=0,angleB=60")
-    kw = dict(xycoords='data', textcoords="axes fraction",
-              arrowprops=arrowprops, bbox=bbox_props, ha="right", va="top")
+    kw = dict(
+        xycoords="data",
+        textcoords="axes fraction",
+        arrowprops=arrowprops,
+        bbox=bbox_props,
+        ha="right",
+        va="top",
+    )
     ax.annotate(text, xy=(xmax, ymax), xytext=(0.94, 0.96), **kw)
 
 
@@ -55,17 +63,20 @@ def show_stats(stats, title=None):
     if title:
         plt.title(title)
     plt.xlabel("tours")
-    plt.ylabel('fitness')
-    plt.xlim(0, len(stats['max_fitness']))
-    plt.ylim(-70, 0)  # (-70,0)#(0, 100)  # stats['parameters']['chromosome size'])  # stats['max_fitness'][-1]*1.1
+    plt.ylabel("fitness")
+    plt.xlim(0, len(stats["max_fitness"]))
+    plt.ylim(0, 100)
+    # (-70,0)#(0, 100)
+    # # stats['parameters']['chromosome size'])
+    # # stats['max_fitness'][-1]*1.1
 
-    ax.plot(stats['max_fitness'], color='red', label='max')
-    ax.plot(stats['min_fitness'], color='green', label='min')
-    ax.plot(stats['mean_fitness'], color='blue', label='mean')
+    ax.plot(stats["max_fitness"], color="red", label="max")
+    ax.plot(stats["min_fitness"], color="green", label="min")
+    ax.plot(stats["mean_fitness"], color="blue", label="mean")
     # ax.plot(stats['fitness_diversity'], color='black', label='fitness_diversity')
 
-    windows_size = 49
-    polynomial_order = 3
+    # windows_size = 49
+    # polynomial_order = 3
 
     # ax.plot(savgol_filter(stats['max_fitness'], windows_size, polynomial_order), color='red', linestyle='dashed',
     #         label='max_fitness soft')
@@ -74,7 +85,7 @@ def show_stats(stats, title=None):
     # ax.plot(savgol_filter(stats['mean_fitness'], windows_size, polynomial_order), color='blue', linestyle='dashed',
     #         label='mean_fitness soft')
 
-    plt.legend(title='fitness', loc='lower right')
+    plt.legend(title="fitness", loc="lower right")
 
     # plt.title("\n".join(textwrap.wrap(str(stats['parameters']['mutation'][1]), 120)))
     plt.show()
@@ -99,11 +110,11 @@ def show_stats(stats, title=None):
 
 
 def plot_mean_stats(stats, label, title, diff_labels):
-    max_fit = [s['max_fitness'] for s in stats]
+    max_fit = [s["max_fitness"] for s in stats]
     nb_diff_label = len(set(label))
     pack_max_fit = []
     for i in range(nb_diff_label):
-        pack_max_fit.append(max_fit[i * 20:(i * 20) + 20])
+        pack_max_fit.append(max_fit[i * 20 : (i * 20) + 20])
     figure(figsize=(8, 8))
     for i, m in enumerate(pack_max_fit):
         maxi = 0
@@ -118,7 +129,7 @@ def plot_mean_stats(stats, label, title, diff_labels):
         #         color = ['b','r','g','y','c','m'][i]
         plt.plot(x, y, label=diff_labels[i])  # , color=color)
     plt.title(title)
-    if 'ordre 1' in title or 'PMX' in title:
+    if "ordre 1" in title or "PMX" in title:
         plt.xlim(0, 10000)
         plt.ylim(-25, 0)
     else:
@@ -126,13 +137,13 @@ def plot_mean_stats(stats, label, title, diff_labels):
         plt.ylim(0, 100)
     plt.ylabel("fitness")
     plt.xlabel("tours")
-    plt.legend(loc='lower right')
+    plt.legend(loc="lower right")
     # plt.show()
-    plt.savefig(title + ".png", pad_inches=0, bbox_inches='tight')
+    plt.savefig(title + ".png", pad_inches=0, bbox_inches="tight")
 
 
 def plot_all_stats(stats, label, title, diff_labels):
-    max_fit = [s['max_fitness'] for s in stats]
+    max_fit = [s["max_fitness"] for s in stats]
     # label_bool = [False] * len(diff_labels)
     fig = figure(num=1, figsize=(15, 15))
     for i, y in enumerate(max_fit):
@@ -146,7 +157,7 @@ def plot_all_stats(stats, label, title, diff_labels):
         # else:
         #     plt.plot(x, y, color=color)
     plt.title(title)
-    if 'ordre 1' in title or 'PMX' in title:
+    if "ordre 1" in title or "PMX" in title:
         plt.xlim(0, 10000)
         plt.ylim(-60, 0)
     else:
@@ -164,6 +175,7 @@ def plot_all_stats(stats, label, title, diff_labels):
     plt.ylabel("fitness")
     plt.xlabel("tours")
     plt.show()
+
 
 # 66023c
 # b723a5
