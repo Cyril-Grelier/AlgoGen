@@ -223,7 +223,7 @@ class Algo_genetic:
                     self.selected.append(deepcopy(individual))
                     break
 
-    def adaptive(self, is_crossover: bool) -> Crossover_type:
+    def adaptive(self, is_crossover: bool) -> Crossover_type | Mutation_type:
         adaptive_type = (
             self.parameters.adaptive_crossover
             if is_crossover
